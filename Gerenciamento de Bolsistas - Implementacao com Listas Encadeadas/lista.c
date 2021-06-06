@@ -388,3 +388,217 @@ void cadastroBemSucedido(){
 void orcamentoInsuficiente(){
     printf ("Orcamento insuficiente! Retornando ao menu...");
 }
+
+
+/*
+
+Funcoes de cadastro
+
+*/
+
+//Aqui sao chamadas as funcoes de leitura,
+//feitas as verificacoes e sao passados os valores
+//para as funcoes de manipulacao de lista.
+
+Aluno* cadastraAluno(Aluno* aluno){
+    char* matricula = leMatCod("a matricula", "aluno");
+    if (buscaAluno(aluno, matricula) != NULL) {
+        NaoJaCadastrado("aluno ja");
+        return aluno;
+    }
+    
+    char* nome = leNome("aluno");
+    char* telefone = leTelefone();
+    cadastroBemSucedido();
+    return insereAluno(aluno, matricula, telefone, nome);
+}
+
+
+Professor* cadastraProfessor(Professor* professor){
+    char* codigo = leMatCod("o codigo", "professor");
+    if(buscaProfessor(professor, codigo) != NULL){
+        NaoJaCadastrado("professor ja");
+        return professor;
+    }
+    
+    char* nome = leNome("professor");
+    char* depto = leGenerico("digite o depto do professor: ", 50);
+
+    cadastroBemSucedido();
+    return insereProfessor(professor, codigo, nome, depto);
+}
+
+
+Projeto* cadastraProjeto(Projeto* projeto, Professor* professor){
+    float orcamento_total;
+    int tipo;
+    Professor* aux;
+    
+    char* codigoProj = leMatCod("o codigo", "projeto");
+    if (buscaProjeto(projeto, codigoProj) != NULL){
+        NaoJaCadastrado("projeto ja");
+        return projeto;
+    }
+
+    char* codigoProf = leMatCod("o codigo", "professor coordenador");
+    if(buscaProfessor(professor, codigoProf) == NULL){
+        NaoJaCadastrado("professor nao");
+        return projeto;
+    }
+
+    char* descricao = leGenerico("insira a descricao do projeto(max 100 caracteres): ", 100);
+    orcamento_total = leFloat("\nDigite o orcamento total para o projeto: R$");  
+    tipo = leTipo(); 
+    cadastroBemSucedido();
+    return insereProjeto(projeto, codigoProj, descricao, orcamento_total, tipo, professor);
+}
+
+
+Vinculo* cadastraVinculo(Vinculo* vinculo, Projeto* projeto, Aluno* aluno){
+    float bolsa_mensal;
+    Aluno* auxA;
+    Projeto* auxP;
+
+    char* matricula = leMatCod("a matricula", "aluno a ser vinculado");
+    auxA = buscaAluno(aluno, matricula);
+    if (auxA == NULL) {
+        NaoJaCadastrado("aluno nao");
+        return vinculo;
+    }
+
+    char* codigo = leMatCod("o codigo", "projeto a ser vinculado"); 
+    auxP = buscaProjeto(projeto, codigo);
+    if(auxP == NULL){
+        NaoJaCadastrado("projeto nao");
+        return vinculo;
+    }
+
+    
+    bolsa_mensal = leFloat("insira a bolsa mensal do aluno: R$");
+    if (auxP->orcamento_atual < (12 * bolsa_mensal)){
+        orcamentoInsuficiente();
+        return vinculo;
+    };
+
+    cadastroBemSucedido();
+    auxP->orcamento_atual = auxP->orcamento_total - (12 * bolsa_mensal);
+    return insereVinculo(vinculo, auxA, auxP, bolsa_mensal);
+}
+
+
+/*
+
+Funcoes de remocao
+
+*/
+//Aqui o vinculo e removido por meio de uma funcao de leitura e
+//uma auxiliar de manipulacao de listas.
+Vinculo* removeVinculoLista(Vinculo* vinculo, Vinculo* auxV){
+    if (auxV == vinculo){
+        vinculo = auxV->prox;
+    }
+    else{
+        auxV->ant->prox = auxV->prox;
+    }
+
+    if (auxV->prox != NULL){
+        auxV->prox->ant = auxV->ant;
+    }
+
+    free(auxV);
+    cadastroBemSucedido();
+    return vinculo;
+}
+
+
+Vinculo* removeVinculo(Vinculo* vinculo, Projeto* projeto, Aluno* aluno){
+    //aqui o vinculo e entre aluno e projeto e desfeito, arrumando o orcamento.
+    int meses;
+    float bolsa_restante;
+    Aluno* auxA;
+    Projeto* auxP;
+    Vinculo* auxV;
+
+    char* matricula = leMatCod("a matricula", "aluno que sera desvinculado");
+    auxA = buscaAluno(aluno, matricula);
+    if (auxA == NULL) {
+        NaoJaCadastrado("aluno nao");
+        return vinculo;
+    }
+
+    char* codigo = leMatCod("o codigo", "projeto que sera desvinculado");
+    auxP = buscaProjeto(projeto, codigo);
+    if(auxP == NULL){
+        NaoJaCadastrado("projeto nao");
+        return vinculo;
+    }
+
+    auxV = buscaVinculo(vinculo, codigo, matricula);
+    if(auxV == NULL){
+        NaoJaCadastrado("vinculo nao");
+        return vinculo;
+    }
+    printf("\nDigite quantos meses o aluno ficou vinculado no projeto: ");
+    scanf("%d", &meses);
+    setbuf(stdin, NULL);
+
+    bolsa_restante = 12 * auxV->bolsa_mensal - meses * auxV->bolsa_mensal;
+    auxP->orcamento_atual += bolsa_restante;
+    removeVinculoLista(vinculo, auxV);
+}
+
+
+/*
+
+Funcoes de liberacao
+
+*/
+
+
+//Todas seguem o mesmo principio: utiliza-se duas variaveis auxiliares, uma para apontar para a struct
+//e outra para salvar o endereco do proximo valor, limpando em loop. E necessario limpar os campos de
+//dentro da struct pois todas as cadeias de caracteres receberam malloc.
+void liberaAluno(Aluno** aluno){
+    Aluno* aux = *aluno;
+    while(aux != NULL){
+        Aluno *p = aux->prox;
+        free(aux->matricula);
+        free(aux->nome);
+        free(aux->telefone);
+        free(aux);
+        aux = p;
+    }
+}
+
+void liberaProfessor(Professor** professor){
+    Professor* aux = *professor;
+    while(aux != NULL){
+        Professor *p = aux->prox;
+        free(aux->codigo);
+        free(aux->depto);
+        free(aux->nome);
+        free(aux);
+        aux = p;
+    }
+}
+
+void liberaProjeto(Projeto** projeto){
+    Projeto* aux = *projeto;
+    while(aux != NULL){
+        Projeto *p = aux->prox;
+        free(aux->codigo);
+        free(aux->descricao);
+        free(aux->tipo);
+        free(aux);
+        aux = p;
+    }
+}
+
+void liberaVinculo(Vinculo** vinculo){
+    Vinculo* aux = *vinculo;
+    while(aux != NULL){
+        Vinculo *p = aux->prox;
+        free(aux);
+        aux = p;
+    }
+}
