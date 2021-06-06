@@ -110,6 +110,68 @@ Lista* cadastra_aluno(Lista* aluno){
 
 ////////////
 
+void imprime_lista_inteira(Lista* no, char* nome, char* centro){
+    Lista* aux = no;
+    
+    while (aux != NULL){
+        printf("\n %-8d  | %-18s | %-50s | %s", aux->matricula, aux->nome, nome, centro);
+        aux = aux->prox;
+    }    
+}
+
+
+///funcoes de remocao
+
+
+Lista* aluno_remove_lista(Lista* no, int matricula){
+    Lista* ant = NULL;
+    Lista* aux = no;
+
+    while (aux != NULL && aux->matricula != matricula){
+        ant = aux;
+        aux = aux->prox;
+    }
+    
+    if (aux == NULL){
+        printf("Erro! Esse aluno nao esta cadastrado no sistema.");
+        return no;
+    }
+
+    if (ant == NULL){
+        no = aux->prox;
+    } else {
+        ant->prox = aux->prox;
+    }
+
+    free(aux->nome);
+    free(aux);
+    aux = NULL;
+
+    return no;
+}
+
+
+/////////////////
+
+///funcoes de liberacao
+
+
+
+void libera_lista(Lista* lista){
+    if (lista == NULL)
+        return;
+    
+    Lista* aux = NULL;
+
+    while (lista != NULL){
+        aux = lista;
+        lista = lista->prox;
+        free(aux->nome);
+        free(aux);
+    }
+    lista = NULL;
+}
+
 
 
 

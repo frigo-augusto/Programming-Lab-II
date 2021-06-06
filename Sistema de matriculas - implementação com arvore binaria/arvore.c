@@ -277,7 +277,190 @@ void vinculo_imprime(Arvore* arvore){
 
 /////////////
 
+//funcoes de remocao
 
+
+void remove_curso(Arvore* arvore){
+    if (arvore->raiz == NULL)
+        return;
+
+    No* aux = pergunta_curso(arvore);
+    if (aux == NULL){
+        printf("\nErro! Este curso nao esta cadastrado! Retornando ao menu...");
+        return;
+    }   
+    remove_curso2(&(arvore->raiz), aux->codigo);
+}
+
+
+
+static void remove_curso2(No** no, int codigo){
+
+    if ((*no) == NULL)
+        return;
+    
+    if ((*no)->codigo == codigo){
+        remove_curso3(no);
+    }
+    else{
+        if((*no)->codigo < codigo){
+            remove_curso2(&((*no)->dir), codigo);
+        }
+        else{
+            remove_curso2(&((*no)->esq), codigo);
+        }
+    }
+
+}
+
+
+
+static void remove_curso3(No ** no){
+    if (no == NULL){
+        printf("O curso a ser removido nao foi encontrado.");
+        return;
+    }
+
+    if ((*no)->esq==NULL && (*no)->dir == NULL)
+    {
+        if ((*no)->pai==NULL){
+            libera_lista((*no)->alunos);
+            free((*no)->nome);
+            free((*no)->centro);
+            (*no) = NULL;
+            printf("Curso removido com sucesso.");
+            return;
+        }
+        if ((*no)->pai->esq==(*no)){
+            (*no)->pai->esq = NULL;
+        }
+        else{
+            (*no)->pai->dir = NULL;
+        }
+        free(*no);
+        free((*no)->nome);
+        free((*no)->centro);
+        libera_lista((*no)->alunos);
+        
+        printf("\nCurso removido com sucesso!");
+        return;
+    }
+    if ((*no)->esq!=NULL) {
+
+        No * maior = retorna_maior_no((*no)->esq);
+        (*no)->codigo = maior->codigo;
+        (*no)->nome = maior->nome;
+        (*no)->centro = maior->centro;
+        (*no)->alunos = maior->alunos;
+
+        remove_curso3(&maior);
+        return;
+    }
+    else{
+
+        No * menor = retorna_menor_no((*no)->dir);
+        (*no)->codigo = menor->codigo;
+        (*no)->nome = menor->nome;
+        (*no)->centro = menor->centro;
+        (*no)->alunos = menor->alunos;
+
+        remove_curso3(&menor);
+        return;
+    }
+
+}
+
+
+void aluno_remove(Arvore* arvore){
+    No* aux = pergunta_curso(arvore);
+    if (aux == NULL){
+        printf("\nErro! Este curso nao esta cadastrado! Retornando ao menu...");
+        return;
+    }
+    int mat = pergunta_matricula();
+    aluno_remove_lista(aux->alunos, mat);
+    printf("\nAluno removido com sucesso!");
+}
+
+
+
+/////////
+
+
+
+
+
+
+
+
+
+
+
+//funcoes de leitura
+
+static No* pergunta_curso(Arvore* arvore){
+    int aux;
+    printf("\nDigite o codigo do curso: ");
+    scanf("%d", &aux);
+    return busca_curso(arvore->raiz, aux);
+}
+
+
+
+static int pergunta_matricula(){
+    int matricula;
+    printf("\nEntre a matricula do aluno a ser removido: ");
+    scanf("%d", &matricula);
+    return matricula;
+}
+
+
+//////////
+
+
+
+
+
+
+
+
+
+
+
+
+///funcoes de liberacao
+
+
+
+
+static void libera_no(No* no){
+    if(no == NULL)
+        return;
+    free(no->nome);
+    free(no->centro);
+    libera_lista(no->alunos);
+    free(no);
+}
+
+
+
+void chama_libera_arvore(No* no){
+    printf ("\nSaindo do programa...");
+    libera_arvore(no);
+}
+
+
+
+static void libera_arvore(No* no){
+    if(no == NULL)
+        return;
+
+    libera_arvore(no->esq);
+    libera_arvore(no->dir);
+    libera_no(no);    
+}
+
+//////////////
 
 
 
